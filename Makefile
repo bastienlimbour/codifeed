@@ -39,10 +39,10 @@ dev: ## Start both API and Frontend in development mode
 	@echo "$(YELLOW)API will be available at: http://localhost:8000$(RESET)"
 	@echo "$(YELLOW)Frontend will be available at: http://localhost:3000$(RESET)"
 	@echo "$(YELLOW)Press Ctrl+C to stop both servers$(RESET)"
-	@trap 'kill %1; kill %2' INT; \
+	@trap 'kill %1; kill %2; kill %3' INT; \
 	cd database && docker compose up & \
-	cd api && poetry run python dev.py & \
-	cd web && pnpm run dev & \
+	sleep 2 && cd api && poetry run python dev.py & \
+	sleep 4 && cd web && pnpm run dev & \
 	wait
 
 dev-api: ## Start API development server
