@@ -35,7 +35,7 @@ class UserService:
                 "Please contact support if you believe this is an error."
             )
 
-        return User.model_validate(user)
+        return user
 
     @staticmethod
     def get_by_username(session: Session, username: str) -> User:
@@ -65,7 +65,7 @@ class UserService:
         user.soft_delete()
         session.commit()
 
-        return User.model_validate(user)
+        return user
 
     @staticmethod
     def _select_users_with_follow_data(
