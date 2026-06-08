@@ -18,10 +18,7 @@ def login_required(func) -> Callable:
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        try:
-            verify_jwt_in_request()
-        except Exception as e:
-            raise Unauthorized(description="Error verifying JWT: Login required") from e
+        _verify_jwt_or_raise(refresh=False)
         return func(*args, **kwargs)
 
     return wrapper
@@ -32,13 +29,22 @@ def refresh_required(func) -> Callable:
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        try:
-            verify_jwt_in_request(refresh=True)
-        except Exception as e:
-            raise Unauthorized(description="Error verifying JWT: Refresh required") from e
+        _verify_jwt_or_raise(refresh=True)
         return func(*args, **kwargs)
 
     return wrapper
+
+
+def _verify_jwt_or_raise(refresh: bool) -> None:
+    try:
+        verify_jwt_in_request(refresh=refresh)
+    except Exception as e:
+        description = (
+            "Error verifying JWT: Refresh required"
+            if refresh
+            else "Error verifying JWT: Login required"
+        )
+        raise Unauthorized(description=description) from e
 
 
 def get_current_user_id() -> UUID:

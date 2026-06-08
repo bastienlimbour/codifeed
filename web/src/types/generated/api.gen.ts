@@ -316,24 +316,27 @@ export interface components {
              * @description Detailed validation errors
              * @default null
              */
-            details: components["schemas"]["ErrorDetails"][] | null;
+            details: components["schemas"]["ValidationErrorDetail"][] | null;
         };
-        /** ErrorDetails */
-        ErrorDetails: {
-            /** Type */
-            type: string;
+        /**
+         * ValidationErrorDetail
+         * @description Safe validation error detail exposed to API clients.
+         */
+        ValidationErrorDetail: {
+            /**
+             * Type
+             * @default null
+             */
+            type: string | null;
             /** Loc */
-            loc: (number | string)[];
+            loc?: (string | number)[];
             /** Msg */
             msg: string;
-            /** Input */
-            input: unknown;
-            /** Ctx */
-            ctx?: {
-                [key: string]: unknown;
-            };
-            /** Url */
-            url?: string;
+            /**
+             * Url
+             * @default null
+             */
+            url: string | null;
         };
         /**
          * ErrorResponse
@@ -355,7 +358,7 @@ export interface components {
              * Details
              * @description Detailed validation errors
              */
-            details: components["schemas"]["ErrorDetails"][] | null;
+            details: components["schemas"]["ValidationErrorDetail"][] | null;
         };
         /** UserPublic */
         UserPublic: {
@@ -633,7 +636,7 @@ export interface components {
     pathItems: never;
 }
 export type ErrorResponseWithDefaultDetailsNone = components['schemas']['ErrorResponseWithDefaultDetailsNone'];
-export type ErrorDetails = components['schemas']['ErrorDetails'];
+export type ValidationErrorDetail = components['schemas']['ValidationErrorDetail'];
 export type ErrorResponse = components['schemas']['ErrorResponse'];
 export type UserPublic = components['schemas']['UserPublic'];
 export type UserCreate = components['schemas']['UserCreate'];

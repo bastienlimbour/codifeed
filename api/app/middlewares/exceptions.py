@@ -1,4 +1,4 @@
-from flask import Response
+from flask import Response, request
 from flask_jwt_extended.exceptions import JWTExtendedException
 from sqlalchemy import exc as sa_exception
 from werkzeug import exceptions
@@ -17,7 +17,14 @@ def register_error_handlers(app):
     def handle_jwt_error(e):
         """Handle JWT authentication errors"""
         error_message = str(e) or "Authentication failed"
-        logger.warning(f"JWT error: {error_message}")
+        logger.warning(
+            "JWT error: %s | method=%s path=%s origin=%s user_agent=%s",
+            error_message,
+            request.method,
+            request.path,
+            request.headers.get("Origin"),
+            request.user_agent.string,
+        )
 
         # Determine specific error type
         if "expired" in error_message.lower():
@@ -25,15 +32,22 @@ def register_error_handlers(app):
         elif "invalid" in error_message.lower() or "decode" in error_message.lower():
             code = ErrorCodes.INVALID_TOKEN
         else:
-            code = None
+            code = ErrorCodes.UNAUTHORIZED
 
-        return error_response(message=error_message, status=401, code=code)
+        return error_response(message="Authentication failed", status=401, code=code)
 
     # Database errors
     @app.errorhandler(sa_exception.IntegrityError)
     def handle_integrity_error(e):
         """Handle database integrity errors (unique, foreign key, etc.)"""
-        logger.error(f"Database integrity error: {str(e)}")
+        logger.error(
+            "Database integrity error: %s | method=%s path=%s origin=%s user_agent=%s",
+            str(e),
+            request.method,
+            request.path,
+            request.headers.get("Origin"),
+            request.user_agent.string,
+        )
         error_str = str(e).lower()
 
         if "unique constraint" in error_str or "duplicate" in error_str:
@@ -52,7 +66,14 @@ def register_error_handlers(app):
     @app.errorhandler(sa_exception.SQLAlchemyError)
     def handle_database_error(e):
         """Handle general database errors"""
-        logger.error(f"Database error: {str(e)}")
+        logger.error(
+            "Database error: %s | method=%s path=%s origin=%s user_agent=%s",
+            str(e),
+            request.method,
+            request.path,
+            request.headers.get("Origin"),
+            request.user_agent.string,
+        )
         return error_response(
             message="Database error occurred",
             status=500,
@@ -65,11 +86,23 @@ def register_error_handlers(app):
         """Handle standard HTTP exceptions"""
         status_code = e.code or 500
 
-        logger.warning(f"HTTP {status_code}: {e.description}")
+        cause = e.__cause__
+        cause_details = f" | cause={type(cause).__name__}: {cause}" if cause is not None else ""
+        logger.warning(
+            "HTTP %s: %s%s | method=%s path=%s origin=%s user_agent=%s",
+            status_code,
+            e.description,
+            cause_details,
+            request.method,
+            request.path,
+            request.headers.get("Origin"),
+            request.user_agent.string,
+        )
 
         return error_response(
             message=str(e.description) if e.description else "Request failed",
             status=status_code,
+            code=_error_code_for_status(status_code),
         )
 
     # Generic fallback
@@ -88,4 +121,19 @@ def register_error_handlers(app):
         return error_response(
             message=message,
             status=500,
+            code=ErrorCodes.INTERNAL_ERROR,
         )
+
+
+def _error_code_for_status(status_code: int) -> str | None:
+    return {
+        400: ErrorCodes.BAD_REQUEST,
+        401: ErrorCodes.UNAUTHORIZED,
+        403: ErrorCodes.FORBIDDEN,
+        404: ErrorCodes.NOT_FOUND,
+        405: ErrorCodes.METHOD_NOT_ALLOWED,
+        409: ErrorCodes.CONFLICT,
+        429: ErrorCodes.RATE_LIMIT_EXCEEDED,
+        500: ErrorCodes.INTERNAL_ERROR,
+        503: ErrorCodes.DATABASE_ERROR,
+    }.get(status_code)
