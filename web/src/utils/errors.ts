@@ -1,4 +1,7 @@
-import type { ErrorDetails, ErrorResponse } from "@/types/generated/api.gen"
+import type {
+  ErrorResponse,
+  ValidationErrorDetail,
+} from "@/types/generated/api.gen"
 
 // Define possible API error response types
 export type ApiErrorData = ErrorResponse | string | null
@@ -56,11 +59,14 @@ export class ApiError extends Error {
     return fallbackMessage
   }
 
-  private formatValidationErrors(errors: ErrorDetails[]): string {
+  private formatValidationErrors(errors: ValidationErrorDetail[]): string {
     if (errors.length === 0) return ""
 
     return errors
-      .map((error) => `• ${error.loc.join("→")}: ${error.msg}`)
+      .map((error) => {
+        const location = error.loc?.join("→") || "field"
+        return `• ${location}: ${error.msg}`
+      })
       .join("\n")
   }
 

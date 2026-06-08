@@ -4,6 +4,6 @@ poetry = { version = "2", pyproject = "{{ config_root }}/pyproject.toml" }
 python = "3.13"
 
 [env]
-# _.python.venv = { path = ".venv", create = false }
+_.python.venv = { path = ".venv", create = true }
 # MISE_POETRY_AUTO_INSTALL = 1
 # MISE_POETRY_VENV_AUTO = 1

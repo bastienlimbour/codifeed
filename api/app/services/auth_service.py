@@ -39,7 +39,7 @@ class AuthService:
         if not user or not user.id:
             raise InternalServerError(description="Failed to create user")
 
-        return User.model_validate(user)
+        return user
 
     @staticmethod
     def authenticate_user(session: Session, email: str, password: str) -> User:
@@ -54,7 +54,7 @@ class AuthService:
             if not user.id:
                 raise InternalServerError(description="Failed to login user")
 
-            return User.model_validate(user)
+            return user
 
         except (
             argon_exceptions.VerifyMismatchError,

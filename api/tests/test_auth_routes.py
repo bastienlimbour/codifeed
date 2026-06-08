@@ -62,6 +62,7 @@ def test_signup_duplicate_email(client: FlaskClient, created_user, faker_instanc
     assert json_data is not None
     assert "message" in json_data
     assert json_data["message"] == "A user with this email already exists"
+    assert json_data["code"] == "BAD_REQUEST"
 
 
 @pytest.mark.integration
@@ -83,6 +84,30 @@ def test_signup_duplicate_username(client: FlaskClient, created_user, faker_inst
     assert json_data is not None
     assert "message" in json_data
     assert json_data["message"] == "A user with this username already exists"
+    assert json_data["code"] == "BAD_REQUEST"
+
+
+@pytest.mark.integration
+@pytest.mark.auth
+def test_signup_validation_error_does_not_expose_input(client: FlaskClient, sample_user_data: dict):
+    """Test validation errors do not expose raw input values such as passwords."""
+    signup_data = {
+        **sample_user_data,
+        "password": "weakpassword",
+    }
+
+    response = client.post("/auth/signup", json=signup_data)
+
+    assert response.status_code == 422
+
+    json_data = response.get_json()
+    assert json_data is not None
+    assert json_data["message"] == "Validation failed"
+    assert json_data["code"] == "VALIDATION_ERROR"
+    assert "details" in json_data
+    assert json_data["details"]
+    assert all("input" not in error for error in json_data["details"])
+    assert signup_data["password"] not in str(json_data)
 
 
 @pytest.mark.integration
@@ -204,6 +229,7 @@ def test_refresh_invalid_token(client: FlaskClient):
     assert json_data is not None
     assert "message" in json_data
     assert "Error verifying JWT: Refresh required" in json_data["message"]
+    assert json_data["code"] == "UNAUTHORIZED"
 
 
 @pytest.mark.integration
